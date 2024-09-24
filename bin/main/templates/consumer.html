@@ -1,22 +1,90 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Getting Started: Serving Web Content</title>
+    <title>Wahldaten</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-</head>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script>
-$(document).ready(function() {
-    $.ajax({
-        url: "http://localhost:8080/timingstation/001/json"
-    }).then(function(data) {
-        $('#timingstationID').append(data.timingstationID);
-        $('#timestamp').append(data.timestamp);
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        var id = Math.floor(9999 * Math.random());
+        $.ajax({
+            url: "http://localhost:8080/warehouse/" + id + "/data"
+        }).then(function(data) {
+            $('#warehouseID').append(data.warehouseID);
+            $('#warehouseName').append(data.warehouseName);
+            $('#warehouseCity').append(data.warehouseCity);
+            $('#warehouseCountry').append(data.warehouseCountry);
+            $('#timestamp').append(data.timestamp);
+
+            // Tabelle für Parteistimmen
+            updateParteienTable(data.parteienData);
+
+            // Filter für Parteien
+            $('#filterParties').on('input', function() {
+                const filterValue = $(this).val().toLowerCase();
+                const filteredParteien = data.parteienData.filter(p => p.parteienName.toLowerCase().includes(filterValue));
+                updateParteienTable(filteredParteien);
+            });
+
+            // Filter für Kandidaten
+            $('#filterCandidates').on('input', function() {
+                const filterValue = $(this).val().toLowerCase();
+                $('.kandidaten-row').each(function() {
+                    const row = $(this);
+                    const kandidatName = row.find('.kandidat-name').text().toLowerCase();
+                    row.toggle(kandidatName.includes(filterValue));
+                });
+            });
+        });
+
+        function updateParteienTable(parteien) {
+            $('#parteienData').empty().append('<tr><th>Partei Name</th><th>Stimmen</th></tr>');
+
+            for (const p of parteien) {
+                var tr = $('<tr>');
+                tr.append($('<td>').append(p.parteienName));
+                tr.append($('<td>').append(p.parteienStimmen));
+                $('#parteienData').append(tr);
+
+                // Tabelle für Vorzugswahl-Kandidaten
+                for (const k of p.kandidaten) {
+                    var trKandidat = $('<tr class="kandidaten-row">');
+                    trKandidat.append($('<td class="kandidat-name">').append(k.name));
+                    trKandidat.append($('<td>').append(k.stimmen));
+                    $('#kandidatenData').append(trKandidat);
+                }
+            }
+        }
     });
-});
-</script>
+    </script>
+</head>
 <body>
-	<div id="timingstationID"></div>
-	<div id="timestamp"></div>
+    <div id="warehouseID"></div>
+    <div id="warehouseName"></div>
+    <div id="warehouseCity"></div>
+    <div id="warehouseCountry"></div>
+    <div id="timestamp"></div>
+    
+    <h2>Filter Parteinen</h2>
+    <input type="text" id="filterParties" placeholder="Filter Parteien..." />
+
+    <h2>Parteien und Stimmen</h2>
+    <table id="parteienData" border="1">
+        <tr>
+            <th>Partei Name</th>
+            <th>Stimmen</th>
+        </tr>
+    </table>
+
+    <h2>Filter Kandidaten</h2>
+    <input type="text" id="filterCandidates" placeholder="Filter Kandidaten..." />
+
+    <h2>Kandidaten und ihre Stimmen</h2>
+    <table id="kandidatenData" border="1">
+        <tr>
+            <th>Kandidat Name</th>
+            <th>Stimmen</th>
+        </tr>
+    </table>
 </body>
 </html>
